@@ -1,0 +1,115 @@
+# AeroRL: F1 Aerodynamics Optimization Configuration
+
+# Project paths
+paths:
+  models_dir: "models"
+  simulations_dir: "simulations"
+  results_dir: "results"
+  logs_dir: "results/logs"
+  cfd_output: "results/cfd_output"
+
+# Reinforcement Learning Configuration
+rl:
+  # Algorithm settings
+  algorithm: "PPO"  # Options: PPO, SAC, DDPG
+  learning_rate: 0.0003
+  discount_factor: 0.99
+  gae_lambda: 0.95
+  clip_ratio: 0.2
+  entropy_coef: 0.01
+  value_coef: 0.5
+  max_grad_norm: 0.5
+  
+  # Network architecture
+  policy_network:
+    hidden_layers: [256, 256]
+    activation: "tanh"
+  value_network:
+    hidden_layers: [256, 256]
+    activation: "tanh"
+    
+  # Training parameters
+  training:
+    total_timesteps: 1000000
+    batch_size: 64
+    epochs: 10
+    save_frequency: 50000  # Save model every x timesteps
+    eval_frequency: 10000  # Evaluate model every x timesteps
+    random_seed: 42
+
+# Environment Configuration
+environment:
+  # Observation space parameters (aerodynamic measurements)
+  observation_space:
+    - pressure_coefficients
+    - velocity_fields
+    - drag_coefficient
+    - downforce_coefficient
+    - flow_separation
+  
+  # Action space parameters (aerodynamic component adjustments)
+  action_space:
+    # Front wing parameters
+    front_wing:
+      angle_min: -10.0  # degrees
+      angle_max: 10.0
+    
+    # Rear wing parameters
+    rear_wing:
+      angle_min: 0.0
+      angle_max: 15.0
+    
+    # Diffuser parameters
+    diffuser:
+      height_min: 50.0  # mm
+      height_max: 100.0
+    
+    # Floor parameters
+    floor:
+      ride_height_min: 10.0  # mm
+      ride_height_max: 50.0
+  
+  # Reward function weights
+  rewards:
+    downforce_weight: 1.0
+    drag_penalty: -0.5
+    efficiency_bonus: 2.0  # downforce-to-drag ratio bonus
+    illegal_state_penalty: -10.0  # Penalty for invalid configurations
+
+# CFD Simulation Configuration
+cfd:
+  # Simulation parameters
+  solver: "OpenFOAM"  # Options: OpenFOAM, Fluent, etc.
+  turbulence_model: "k-omega SST"
+  mesh_resolution: "medium"  # Options: coarse, medium, fine
+  
+  # Wind tunnel parameters
+  wind_tunnel:
+    velocity: 50.0  # m/s
+    temperature: 293.15  # K
+    pressure: 101325.0  # Pa
+    
+  # Simulation control
+  max_iterations: 500
+  convergence_criteria: 1e-4
+  parallel_processes: 8
+  
+  # Geometry parameters
+  geometry:
+    scale: 1.0  # 1:1 scale
+    reference_area: 1.5  # m^2
+    reference_length: 5.0  # m
+
+# Visualization Configuration
+visualization:
+  plot_frequency: 100  # Update plots every x iterations
+  save_images: true
+  save_animations: true
+  colormap: "jet"
+
+# System Configuration
+system:
+  random_seed: 42
+  num_cpu_cores: 8
+  gpu_enabled: true
+  debug_mode: false
