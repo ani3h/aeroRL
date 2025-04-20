@@ -11,9 +11,11 @@ gym>=0.21.0
 stable-baselines3>=1.5.0
 
 # CFD Simulation
-openfoam-interface>=0.1.0  # Interface for OpenFOAM
 pyvista>=0.32.0  # For 3D visualization
-pyfoam>=0.7.0  # For OpenFOAM processing
+# OpenFOAM integration - install separately
+# See: https://openfoam.org/download/
+# Optional PyFoam for OpenFOAM processing if needed
+# pip install PyFoam
 
 # Optimization and Analysis
 scikit-learn>=1.0.0
