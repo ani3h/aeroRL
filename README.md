@@ -120,8 +120,8 @@ All hyperparameters are in `config/config.yaml`:
 ```
 ┌──────────────┐     ┌───────────────────┐     ┌──────────────┐
 │  PPO Agent   │────▶│  F1 Aero Env      │────▶│  Surrogate   │
-│  (Actor +    │     │  (Gymnasium)       │     │  CFD Model   │
-│   Critic)    │◀────│  8-dim obs/action  │◀────│  (Analytical)│
+│  (Actor +    │     │  (Gymnasium)      │     │  CFD Model   │
+│   Critic)    │◀────│  8-dim obs/action │◀────│  (Analytical)│
 └──────────────┘     └───────────────────┘     └──────────────┘
        │                                              │
        ▼                                              ▼
@@ -131,14 +131,4 @@ All hyperparameters are in `config/config.yaml`:
 └──────────────┘                             └──────────────┘
 ```
 
-## Dependencies
 
-- Python 3.9+
-- TensorFlow ≥ 2.8
-- Gymnasium ≥ 0.28
-- Flask ≥ 3.0
-- NumPy, Pandas, Matplotlib, PyYAML
-
-## License
-
-This project is for educational and research purposes.
