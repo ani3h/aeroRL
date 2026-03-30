@@ -1,4 +1,5 @@
 # AeroRL: F1 Aerodynamics Optimization Configuration
+# v2 — Tuned hyperparameters for improved training stability and convergence
 
 # Project paths
 paths:
@@ -12,29 +13,29 @@ paths:
 rl:
   # Algorithm settings
   algorithm: "PPO"  # Options: PPO, SAC, DDPG
-  learning_rate: 0.0003
-  discount_factor: 0.99
-  gae_lambda: 0.95
-  clip_ratio: 0.2
-  entropy_coef: 0.01
+  learning_rate: 0.0001          # ↓ from 0.0003 — slower but more stable convergence
+  discount_factor: 0.995         # ↑ from 0.99  — longer horizon for aero optimization
+  gae_lambda: 0.97               # ↑ from 0.95  — less bias in advantage estimates
+  clip_ratio: 0.15               # ↓ from 0.2   — more conservative policy updates
+  entropy_coef: 0.03             # ↑ from 0.01  — more exploration to find better configs
   value_coef: 0.5
   max_grad_norm: 0.5
   
   # Network architecture
   policy_network:
-    hidden_layers: [256, 256]
+    hidden_layers: [512, 256]    # ↑ from [256, 256] — more capacity for complex aero relationships
     activation: "tanh"
   value_network:
-    hidden_layers: [256, 256]
+    hidden_layers: [512, 256]    # ↑ from [256, 256] — better value estimation
     activation: "tanh"
     
   # Training parameters
   training:
     total_timesteps: 1000000
-    batch_size: 64
-    epochs: 10
-    save_frequency: 50000  # Save model every x timesteps
-    eval_frequency: 10000  # Evaluate model every x timesteps
+    batch_size: 128              # ↑ from 64 — smoother gradient estimates
+    epochs: 8                    # ↓ from 10 — avoid overfitting each rollout
+    save_frequency: 50000
+    eval_frequency: 10000
     random_seed: 42
 
 # Environment Configuration
@@ -69,12 +70,27 @@ environment:
       ride_height_min: 10.0  # mm
       ride_height_max: 50.0
   
-  # Reward function weights
+  # Reward function weights (v2 — redesigned for normalized rewards)
   rewards:
-    downforce_weight: 1.0
-    drag_penalty: -0.5
-    efficiency_bonus: 2.0  # downforce-to-drag ratio bonus
-    illegal_state_penalty: -10.0  # Penalty for invalid configurations
+    # Primary objective: maximize aerodynamic efficiency (downforce/drag)
+    efficiency_target: 1.5           # Target efficiency to aim for
+    efficiency_weight: 5.0           # Weight for efficiency component
+    
+    # Secondary: keep drag low
+    drag_penalty: -2.0               # Penalize high drag
+    drag_baseline: 0.32              # Baseline Cd (reward for going below)
+    
+    # Secondary: maximize downforce
+    downforce_weight: 1.5            # Reward for high downforce
+    downforce_baseline: 0.35         # Baseline downforce
+    
+    # Improvement bonuses
+    efficiency_improvement_bonus: 3.0  # Bonus for beating previous efficiency
+    new_best_bonus: 1.0                # Bonus for new all-time best
+    
+    # Penalties
+    smoothness_penalty: -0.5         # Penalize large parameter oscillations
+    illegal_state_penalty: -2.0      # Penalty for invalid configurations (reduced, since we clip)
 
 # CFD Simulation Configuration
 cfd:

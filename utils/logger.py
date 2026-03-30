@@ -274,18 +274,19 @@ class AeroRLLogger:
         if hasattr(model, 'save_weights'):
             # TensorFlow-style model
             checkpoint_path = os.path.join(
-                checkpoint_dir, f"model_step_{step}")
+                checkpoint_dir, f"model_step_{step}.weights.h5")
             model.save_weights(checkpoint_path)
             logging.info(
                 f"Model checkpoint saved at step {step}: {checkpoint_path}")
 
             # Save best model separately
             if is_best:
-                best_path = os.path.join(checkpoint_dir, "best_model")
+                best_path = os.path.join(checkpoint_dir, "best_model.weights.h5")
                 model.save_weights(best_path)
                 logging.info(f"Best model saved at step {step}: {best_path}")
         elif hasattr(model, 'state_dict'):
             # PyTorch-style model
+            import torch
             checkpoint_path = os.path.join(
                 checkpoint_dir, f"model_step_{step}.pt")
             torch.save(model.state_dict(), checkpoint_path)
@@ -423,8 +424,13 @@ class AeroRLLogger:
         # Export metrics to CSV for further analysis
         if self.metrics_history and self.metrics_history.get('iteration'):
             try:
-                # Convert metrics to DataFrame
-                metrics_df = pd.DataFrame(self.metrics_history)
+                # Pad lists to equal length to avoid DataFrame error
+                max_len = max(len(v) for v in self.metrics_history.values() if isinstance(v, list))
+                padded = {}
+                for key, values in self.metrics_history.items():
+                    if isinstance(values, list) and len(values) > 0:
+                        padded[key] = values + [None] * (max_len - len(values))
+                metrics_df = pd.DataFrame(padded)
                 metrics_df.to_csv(os.path.join(
                     self.log_dir, 'training_metrics.csv'), index=False)
                 logging.info(f"Training metrics exported to CSV")

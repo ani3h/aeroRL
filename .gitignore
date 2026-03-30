@@ -1,0 +1,65 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# ── Virtual Environments ───────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── IDE / Editor ───────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Training Results & Models ──────────────────────────
+results/
+models/
+checkpoints/
+*.weights.h5
+*.h5
+*.pt
+*.ckpt
+*.ckpt.*
+
+# ── Logs ───────────────────────────────────────────────
+logs/
+*.log
+events.out.tfevents.*
+
+# ── CFD Simulation Output ─────────────────────────────
+simulations/output/
+*.stl
+*.vtk
+*.vtp
+*.foam
+*.OpenFOAM
+postProcessing/
+constant/polyMesh/
+
+# ── Data & Artifacts ──────────────────────────────────
+*.csv
+*.pkl
+*.npy
+*.npz
+!requirements.txt
+
+# ── Jupyter ───────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── OS ────────────────────────────────────────────────
+.DS_Store
+.Spotlight-V100
+.Trashes

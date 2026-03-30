@@ -10,10 +10,9 @@ AeroRL is an AI-driven F1 aerodynamics optimization system that leverages Reinfo
 ## Project Directory Structure
 ```
 AeroRL/
-│── models/                # Reinforcement Learning models
-│── simulations/           # CFD simulation scripts
+│── rl/                    # Reinforcement Learning models
+│── cfd/                   # CFD simulation scripts
 │── environment/           # OpenAI Gym environment for aerodynamic optimization
-│── training/              # RL training scripts
 │── results/               # Logs, graphs, and performance metrics
 │── utils/                 # Helper functions and scripts
 │── README.md              # Project documentation

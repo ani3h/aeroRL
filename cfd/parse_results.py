@@ -157,8 +157,8 @@ class CFDResultsParser:
                             # Calculate efficiency (downforce to drag ratio)
                             # Note: Cl is negative for downforce, so we negate it
                             if results['cd'] != 0:
-                                results['efficiency'] = - \
-                                    (results['cl'] / results['cd'])
+                                results['efficiency'] = -(
+                                    results['cl'] / results['cd'])
 
                             results['converged'] = True
 
@@ -168,9 +168,60 @@ class CFDResultsParser:
                 case_dir, 'postProcessing', 'residuals')
             if os.path.exists(residuals_dir):
                 # Check convergence based on residuals
-                # Implementation would depend on specific convergence criteria
                 results['converged'] = self._check_convergence_from_residuals(
                     residuals_dir)
+
+        return results
+
+    def _parse_simscale_results(self, case_dir: str) -> Dict[str, Any]:
+        """Parse SimScale simulation results."""
+        results = {
+            'converged': False,
+            'cd': None,
+            'cl': None,
+            'efficiency': None
+        }
+
+        # SimScale results may be in a different format
+        simscale_results_dir = os.path.join(case_dir, 'simscale_results')
+
+        # Look for a results CSV file
+        csv_files = [f for f in os.listdir(
+            simscale_results_dir) if f.endswith('.csv')]
+        for csv_file in csv_files:
+            if 'force' in csv_file.lower() or 'coeff' in csv_file.lower():
+                file_path = os.path.join(simscale_results_dir, csv_file)
+
+                with open(file_path, 'r') as f:
+                    reader = csv.reader(f)
+                    headers = next(reader)
+
+                    # Find relevant columns
+                    cd_index = None
+                    cl_index = None
+
+                    for i, header in enumerate(headers):
+                        if 'drag' in header.lower() or 'cd' in header.lower():
+                            cd_index = i
+                        elif 'lift' in header.lower() or 'cl' in header.lower():
+                            cl_index = i
+
+                    if cd_index is not None and cl_index is not None:
+                        # Read all rows
+                        rows = list(reader)
+                        if rows:
+                            # Use last row for final values
+                            final_row = rows[-1]
+                            results['cd'] = float(final_row[cd_index])
+                            results['cl'] = float(final_row[cl_index])
+
+                            # Calculate efficiency
+                            if results['cd'] != 0:
+                                results['efficiency'] = -(
+                                    results['cl'] / results['cd'])
+
+                            results['converged'] = True
+                            break
 
         return results
 
@@ -208,20 +259,17 @@ class CFDResultsParser:
                             # If we found both, calculate efficiency
                             if results['cd'] is not None and results['cl'] is not None:
                                 if results['cd'] != 0:
-                                    results['efficiency'] = - \
-                                        (results['cl'] / results['cd'])
+                                    results['efficiency'] = -(
+                                        results['cl'] / results['cd'])
                                 results['converged'] = True
                                 break
-                    except:
+                    except Exception:
                         # If we can't parse as text, just continue
                         continue
 
         return results
 
     def _check_convergence_from_residuals(self, residuals_dir: str) -> bool:
-        # In a real implementation, this would analyze residual trends
-        # For now, we'll use a simple implementation
-
         # Find the latest time directory
         time_dirs = [d for d in os.listdir(residuals_dir) if os.path.isdir(
             os.path.join(residuals_dir, d))]
@@ -257,7 +305,7 @@ class CFDResultsParser:
                     try:
                         # Assuming the second column is the first residual value
                         residual_values.append(float(values[1]))
-                    except:
+                    except (ValueError, IndexError):
                         continue
 
             if not residual_values:
@@ -541,55 +589,3 @@ if __name__ == "__main__":
     # Batch process all cases
     all_results = parser.batch_process()
     print(f"Processed {len(all_results)} cases")
-
-    def _parse_simscale_results(self, case_dir: str) -> Dict[str, Any]:
-        results = {
-            'converged': False,
-            'cd': None,
-            'cl': None,
-            'efficiency': None
-        }
-
-        # SimScale results may be in a different format
-        # This implementation would depend on the specific SimScale output format
-        simscale_results_dir = os.path.join(case_dir, 'simscale_results')
-
-        # Look for a results CSV file
-        csv_files = [f for f in os.listdir(
-            simscale_results_dir) if f.endswith('.csv')]
-        for csv_file in csv_files:
-            if 'force' in csv_file.lower() or 'coeff' in csv_file.lower():
-                file_path = os.path.join(simscale_results_dir, csv_file)
-
-                with open(file_path, 'r') as f:
-                    reader = csv.reader(f)
-                    headers = next(reader)
-
-                    # Find relevant columns
-                    cd_index = None
-                    cl_index = None
-
-                    for i, header in enumerate(headers):
-                        if 'drag' in header.lower() or 'cd' in header.lower():
-                            cd_index = i
-                        elif 'lift' in header.lower() or 'cl' in header.lower():
-                            cl_index = i
-
-                    if cd_index is not None and cl_index is not None:
-                        # Read all rows
-                        rows = list(reader)
-                        if rows:
-                            # Use last row for final values
-                            final_row = rows[-1]
-                            results['cd'] = float(final_row[cd_index])
-                            results['cl'] = float(final_row[cl_index])
-
-                            # Calculate efficiency
-                            if results['cd'] != 0:
-                                results['efficiency'] = - \
-                                    (results['cl'] / results['cd'])
-
-                            results['converged'] = True
-                            break
-
-        return results
