@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>AeroRL Dashboard</h1>
+    <p>AI-Powered F1 Aerodynamics Optimization — Overview</p>
+</div>
+
+<!-- Training Summary Cards -->
+<div class="grid-4 gap-y">
+    <div class="card">
+        <h3>Training Run</h3>
+        <div class="metric-value" style="font-size: 16px;">{{ training_info.run_id }}</div>
+        <div class="metric-label">Latest Run ID</div>
+    </div>
+    <div class="card">
+        <h3>Episodes</h3>
+        <div class="metric-value metric-good">{{ training_info.get('total_episodes', '—') }}</div>
+        <div class="metric-label">Total trained</div>
+    </div>
+    <div class="card">
+        <h3>Best Efficiency</h3>
+        <div class="metric-value metric-good">{{ training_info.get('best_efficiency', '—') }}</div>
+        <div class="metric-label">Downforce / Drag ratio</div>
+    </div>
+    <div class="card">
+        <h3>Final Loss</h3>
+        <div class="metric-value">{{ training_info.get('final_loss', '—') }}</div>
+        <div class="metric-label">PPO combined loss</div>
+    </div>
+</div>
+
+<!-- Baseline vs RL Comparison -->
+<div class="grid-2 gap-y">
+    <div class="card">
+        <h3>Baseline Configuration</h3>
+        <div class="flex-between mb-24">
+            <div>
+                <div class="metric-value" style="font-size: 24px;">{{ baseline_aero.efficiency }}</div>
+                <div class="metric-label">Efficiency (Cl/Cd)</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="text-mono" style="font-size: 18px; color: var(--red);">Cd {{ baseline_aero.cd }}</div>
+                <div class="text-mono" style="font-size: 18px; color: var(--green);">Df {{ baseline_aero.downforce }}</div>
+            </div>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill amber" style="width: {{ (baseline_aero.efficiency / 2.0 * 100)|int }}%"></div></div>
+    </div>
+
+    <div class="card" style="border-color: var(--green); box-shadow: 0 0 20px var(--green-glow);">
+        <h3>🏆 RL-Optimized Configuration</h3>
+        <div class="flex-between mb-24">
+            <div>
+                <div class="metric-value metric-good" style="font-size: 24px;">{{ rl_aero.efficiency }}</div>
+                <div class="metric-label">Efficiency (Cl/Cd)</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="text-mono" style="font-size: 18px; color: var(--red);">Cd {{ rl_aero.cd }}</div>
+                <div class="text-mono" style="font-size: 18px; color: var(--green);">Df {{ rl_aero.downforce }}</div>
+            </div>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill green" style="width: {{ (rl_aero.efficiency / 2.0 * 100)|int }}%"></div></div>
+    </div>
+</div>
+
+<!-- RL-Optimized Parameters Table -->
+<div class="card gap-y">
+    <h3>RL-Optimized Parameters</h3>
+    <table>
+        <thead>
+            <tr><th>Parameter</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+            {% for name, value in rl_params.items() %}
+            <tr>
+                <td style="color: var(--text-secondary); font-family: Inter, sans-serif;">{{ name.replace('_', ' ').title() }}</td>
+                <td>{{ "%.2f"|format(value) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Quick Links -->
+<div class="grid-3">
+    <a href="/wind-tunnel" class="card" style="text-decoration: none; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">🌬️</div>
+        <h3 style="color: var(--accent);">Wind Tunnel</h3>
+        <p style="color: var(--text-secondary); font-size: 13px;">Interactively explore parameter space</p>
+    </a>
+    <a href="/compare" class="card" style="text-decoration: none; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">⚖️</div>
+        <h3 style="color: var(--accent);">Compare</h3>
+        <p style="color: var(--text-secondary); font-size: 13px;">RL vs Baseline vs Custom</p>
+    </a>
+    <a href="/training" class="card" style="text-decoration: none; text-align: center;">
+        <div style="font-size: 36px; margin-bottom: 8px;">📊</div>
+        <h3 style="color: var(--accent);">Training</h3>
+        <p style="color: var(--text-secondary); font-size: 13px;">View loss curves and metrics</p>
+    </a>
+</div>
+{% endblock %}

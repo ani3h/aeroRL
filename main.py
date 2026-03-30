@@ -121,56 +121,10 @@ def cmd_evaluate(args):
     print("=" * 60)
 
 
-def cmd_cfd_validate(args):
-    """Validate best RL parameters against CFD simulation."""
-    from environment.f1_env import F1AeroEnv
-    from rl.agent import PPOAgent
-    from cfd.run_cfd import run_single_simulation, setup_directories
-
-    config = load_config(args.config)
-
-    # Load agent and run one greedy episode to get best params
-    env = F1AeroEnv(config_path=args.config, max_steps=200)
-    obs_dim = env.observation_space.shape[0]
-    act_dim = env.action_space.shape[0]
-
-    agent = PPOAgent(obs_dim=obs_dim, act_dim=act_dim, config=config)
-    agent.load(args.model_path)
-
-    obs, _ = env.reset()
-    done = False
-    while not done:
-        action, _, _ = agent.select_action(obs, deterministic=True)
-        obs, _, terminated, truncated, info = env.step(action)
-        done = terminated or truncated
-
-    best_params = info.get("parameters", {})
-    print("\nBest parameters from RL agent:")
-    for k, v in best_params.items():
-        print(f"  {k}: {v:.2f}")
-
-    # Run CFD simulation with those parameters
-    print("\nRunning CFD validation simulation...")
-    dirs = setup_directories()
-    sim_type = args.sim_type
-
-    try:
-        result = run_single_simulation(best_params, dirs, sim_type)
-        if result.get("success"):
-            aero = result.get("aero_metrics", {})
-            print("\n" + "=" * 60)
-            print("  CFD VALIDATION RESULTS")
-            print("=" * 60)
-            print(f"  Cd (CFD):         {aero.get('cd', 'N/A')}")
-            print(f"  Cl (CFD):         {aero.get('cl', 'N/A')}")
-            print(f"  Efficiency (CFD): {aero.get('efficiency', 'N/A')}")
-            print("=" * 60)
-        else:
-            print(f"\nCFD simulation failed: {result.get('error', 'unknown')}")
-    except Exception as e:
-        logger.error(f"CFD validation failed: {e}")
-        print(f"\nCFD validation could not be run: {e}")
-        print("This is expected if OpenFOAM / SimScale is not installed locally.")
+def cmd_dashboard(args):
+    """Launch the visual wind tunnel dashboard."""
+    from webapp.app import run_dashboard
+    run_dashboard(host=args.host, port=args.port, debug=args.debug)
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
@@ -211,18 +165,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--episodes", type=int, default=10
     )
 
-    # --- cfd-validate ---
-    cfd_parser = subparsers.add_parser(
-        "cfd-validate", help="Validate RL policy with real CFD"
+    # --- dashboard ---
+    dash_parser = subparsers.add_parser(
+        "dashboard", help="Launch visual wind tunnel dashboard"
     )
-    cfd_parser.add_argument("--config", type=str, default="config/config.yaml")
-    cfd_parser.add_argument(
-        "--model-path", type=str, required=True,
-        help="Path to saved model directory"
+    dash_parser.add_argument(
+        "--host", type=str, default="0.0.0.0",
+        help="Host to bind to"
     )
-    cfd_parser.add_argument(
-        "--sim-type", type=str, default="openfoam_local",
-        choices=["openfoam_local", "openfoam_docker", "simscale_api"],
+    dash_parser.add_argument(
+        "--port", type=int, default=5000,
+        help="Port to serve on"
+    )
+    dash_parser.add_argument(
+        "--debug", action="store_true", default=True,
+        help="Run in debug mode"
     )
 
     return parser
@@ -243,8 +200,8 @@ def main():
         cmd_train(args)
     elif args.command == "evaluate":
         cmd_evaluate(args)
-    elif args.command == "cfd-validate":
-        cmd_cfd_validate(args)
+    elif args.command == "dashboard":
+        cmd_dashboard(args)
     else:
         parser.print_help()
 

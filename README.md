@@ -1,71 +1,144 @@
 # aeroRL: AI-Powered F1 Aerodynamics Optimization
-AeroRL is an AI-driven F1 aerodynamics optimization system that leverages Reinforcement Learning (RL) and Computational Fluid Dynamics (CFD) to minimize drag and maximize downforce in a virtual wind tunnel. This project integrates OpenAI Gym, TensorFlow, and CFD software to iteratively enhance car aerodynamics using AI.
+
+AeroRL is an AI-driven F1 aerodynamics optimization system that uses **Reinforcement Learning (PPO)** and an **analytical surrogate CFD model** to discover optimal car configurations that minimize drag and maximize downforce. The project includes an interactive **Visual Wind Tunnel Dashboard** built with Flask.
 
 ## Features
-- AI-Optimized Aerodynamics: Uses RL to adjust F1 car parameters for optimal airflow
-- Virtual Wind Tunnel: Runs CFD simulations to evaluate aerodynamic efficiency
-- Automated Optimization: AI continuously improves designs based on real-time feedback.
-- Python Based: Built using TensorFlow, OpenAI Gym, and CFD tools
 
-## Project Directory Structure
+- **PPO Agent** — Proximal Policy Optimization with Gaussian policy, GAE advantages, and tuned hyperparameters
+- **Surrogate CFD Model** — Analytical aerodynamic model capturing wing angles, ground effect, diffuser, and gurney flap trade-offs
+- **Visual Wind Tunnel** — Interactive Flask dashboard with real-time parameter sliders, gauges, and charts
+- **Configuration Comparison** — Side-by-side view of Baseline vs RL-Optimized vs Custom parameters
+- **Training Visualization** — Loss curves, reward plots, and aerodynamic coefficient tracking
+
+## Project Structure
+
 ```
-AeroRL/
-│── rl/                    # Reinforcement Learning models
-│── cfd/                   # CFD simulation scripts
-│── environment/           # OpenAI Gym environment for aerodynamic optimization
-│── results/               # Logs, graphs, and performance metrics
-│── utils/                 # Helper functions and scripts
-│── README.md              # Project documentation
-│── requirements.txt       # Dependencies
+aeroRL/
+├── main.py                     # CLI entry point (train, evaluate, dashboard)
+├── config/
+│   └── config.yaml             # Hyperparameters and environment settings
+├── environment/
+│   └── f1_env.py               # Gymnasium environment with surrogate CFD
+├── rl/
+│   ├── model.py                # TensorFlow actor-critic networks
+│   ├── agent.py                # PPO agent (action selection, updates)
+│   └── train.py                # Training loop with logging & checkpoints
+├── webapp/
+│   ├── app.py                  # Flask dashboard application
+│   ├── surrogate.py            # Standalone surrogate CFD model
+│   └── templates/              # HTML templates (Jinja2)
+│       ├── base.html           # Dark-themed base layout
+│       ├── dashboard.html      # Home: training summary + metrics
+│       ├── wind_tunnel.html    # Interactive parameter exploration
+│       ├── compare.html        # Baseline vs RL vs custom
+│       └── training.html       # Training curves viewer
+├── utils/
+│   ├── logger.py               # Training logger with plots & TensorBoard
+│   └── replay_buffer.py        # On-policy rollout buffer with GAE
+├── cfd/                        # CFD simulation scripts (OpenFOAM, optional)
+├── results/                    # Training outputs (models, logs, plots)
+└── requirements.txt
 ```
 
 ## Getting Started
 
-To install the package, you can use pip with the URL of the GitHub repository.
+### 1. Clone the Repository
 
-To use the package, you can follow the steps below:
-
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/ani3h/aeroRL.git
-   cd aeroRL
-   ```
-   
-2. **Set up a virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run the Virutal Wind Tunnel Simulation:**
-   ```bash
-   python simulations/run_cfd.py
-   ```
-
-5. **Train the RL Model:**
-   ```bash
-   python training/train_rl.py
-   ```
-
-6. **Test the Optimized Model:**
-   ```bash
-   python training/test_rl.py
-   ```
-
-## Results & Visualization
-After training, the system generates:
-- Aerodynamic efficiency graphs
-- Drag vs downforce optimizations
-- Before & after comparisons of CFD results
-
-To Visualize, use:
 ```bash
-python results/plot_results.py
+git clone https://github.com/ani3h/aeroRL.git
+cd aeroRL
 ```
 
+### 2. Set Up Environment
 
+```bash
+# Using conda (recommended)
+conda create -n aeroRL python=3.9
+conda activate aeroRL
+pip install -r requirements.txt
+
+# Or using venv
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Train the RL Model
+
+```bash
+# Quick test (~30 seconds)
+python main.py train --total-timesteps 10000
+
+# Medium run (~5 minutes)
+python main.py train --total-timesteps 100000
+
+# Full training (~50 minutes, best results)
+python main.py train --total-timesteps 1000000
+```
+
+Training saves:
+- Model checkpoints → `results/models/`
+- Training plots → `results/logs/<run-id>/plots/`
+- Metrics CSV → `results/logs/<run-id>/`
+
+### 4. Evaluate the Trained Model
+
+```bash
+python main.py evaluate --model-path results/models/best --episodes 20
+```
+
+### 5. Launch the Wind Tunnel Dashboard
+
+```bash
+python main.py dashboard
+```
+
+Open **http://localhost:5000** in your browser. The dashboard includes:
+
+| Page | Description |
+|------|-------------|
+| **Dashboard** | Training summary, baseline vs RL metrics, quick links |
+| **Wind Tunnel** | 8 parameter sliders with real-time Cd/Downforce/Efficiency gauges |
+| **Compare** | Side-by-side Baseline vs RL vs Custom with bar charts |
+| **Training** | View saved training plots (loss, reward, aero coefficients) |
+
+## Configuration
+
+All hyperparameters are in `config/config.yaml`:
+
+| Section | Key Parameters |
+|---------|---------------|
+| `rl.learning_rate` | 0.0001 (tuned for stability) |
+| `rl.policy_network.hidden_layers` | [512, 256] |
+| `rl.training.batch_size` | 128 |
+| `rl.clip_ratio` | 0.15 |
+| `rl.entropy_coef` | 0.03 |
+| `environment.rewards` | Multi-component normalized reward function |
+
+## Architecture
+
+```
+┌──────────────┐     ┌───────────────────┐     ┌──────────────┐
+│  PPO Agent   │────▶│  F1 Aero Env      │────▶│  Surrogate   │
+│  (Actor +    │     │  (Gymnasium)       │     │  CFD Model   │
+│   Critic)    │◀────│  8-dim obs/action  │◀────│  (Analytical)│
+└──────────────┘     └───────────────────┘     └──────────────┘
+       │                                              │
+       ▼                                              ▼
+┌──────────────┐                             ┌──────────────┐
+│  Checkpoints │                             │  Flask       │
+│  & Logs      │                             │  Dashboard   │
+└──────────────┘                             └──────────────┘
+```
+
+## Dependencies
+
+- Python 3.9+
+- TensorFlow ≥ 2.8
+- Gymnasium ≥ 0.28
+- Flask ≥ 3.0
+- NumPy, Pandas, Matplotlib, PyYAML
+
+## License
+
+This project is for educational and research purposes.

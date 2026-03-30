@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Training{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Training Results</h1>
+    <p>
+        {% if run_id %}
+            Training run: <span class="text-mono" style="color: var(--accent);">{{ run_id }}</span>
+        {% else %}
+            No training data found. Run <code style="background: var(--bg-card); padding: 2px 8px; border-radius: 4px;">python main.py train</code> first.
+        {% endif %}
+    </p>
+</div>
+
+{% if plot_files %}
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+    {% for plot in plot_files %}
+    <div class="card">
+        <h3>{{ plot.replace('.png', '').replace('_', ' ').title() }}</h3>
+        <img src="/training/plots/{{ plot }}"
+             alt="{{ plot }}"
+             style="width: 100%; border-radius: 8px; margin-top: 12px;">
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 60px;">
+    <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+    <h3 style="color: var(--text-primary); font-size: 18px; text-transform: none; letter-spacing: 0;">No Training Plots Found</h3>
+    <p style="color: var(--text-secondary); margin-top: 8px;">
+        Start a training run to generate plots:
+    </p>
+    <code style="display: inline-block; background: var(--bg-primary); padding: 12px 20px; border-radius: 8px; margin-top: 16px; font-family: JetBrains Mono, monospace; color: var(--accent);">
+        python main.py train --total-timesteps 100000
+    </code>
+</div>
+{% endif %}
+{% endblock %}

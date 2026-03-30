@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Compare{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>⚖️ Configuration Comparison</h1>
+    <p>Compare Baseline, RL-Optimized, and Custom parameter configurations side by side</p>
+</div>
+
+<!-- Custom Parameters Input -->
+<div class="card gap-y">
+    <h3>Custom Configuration</h3>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        {% for name in param_names %}
+        <div class="slider-group" style="margin-bottom: 8px;">
+            <label>
+                {{ name.replace('_', ' ').title() }}
+                <span id="cmp-val-{{ name }}">{{ "%.1f"|format(baseline_params[name]) }}</span>
+            </label>
+            <input type="range"
+                   id="cmp-{{ name }}"
+                   min="{{ param_ranges[name][0] }}"
+                   max="{{ param_ranges[name][1] }}"
+                   value="{{ baseline_params[name] }}"
+                   step="0.1"
+                   oninput="onCustomChange('{{ name }}')">
+        </div>
+        {% endfor %}
+    </div>
+    <button class="btn btn-primary mt-16" onclick="runComparison()">Compare All</button>
+</div>
+
+<!-- Comparison Results -->
+<div class="grid-3 gap-y" id="comparison-cards">
+    <!-- Baseline -->
+    <div class="card" id="cmp-baseline">
+        <h3>Baseline</h3>
+        <div class="metric-value" id="cmp-eff-baseline" style="font-size: 28px;">—</div>
+        <div class="metric-label">Efficiency</div>
+        <div style="margin-top: 16px;">
+            <div class="flex-between" style="margin-bottom: 6px;">
+                <span style="font-size: 13px; color: var(--text-secondary);">Cd</span>
+                <span class="text-mono" style="color: var(--red);" id="cmp-cd-baseline">—</span>
+            </div>
+            <div class="flex-between">
+                <span style="font-size: 13px; color: var(--text-secondary);">Downforce</span>
+                <span class="text-mono" style="color: var(--green);" id="cmp-df-baseline">—</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RL-Optimized -->
+    <div class="card" id="cmp-rl" style="border-color: var(--green);">
+        <h3>🏆 RL-Optimized</h3>
+        <div class="metric-value metric-good" id="cmp-eff-rl" style="font-size: 28px;">—</div>
+        <div class="metric-label">Efficiency</div>
+        <div style="margin-top: 16px;">
+            <div class="flex-between" style="margin-bottom: 6px;">
+                <span style="font-size: 13px; color: var(--text-secondary);">Cd</span>
+                <span class="text-mono" style="color: var(--red);" id="cmp-cd-rl">—</span>
+            </div>
+            <div class="flex-between">
+                <span style="font-size: 13px; color: var(--text-secondary);">Downforce</span>
+                <span class="text-mono" style="color: var(--green);" id="cmp-df-rl">—</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom -->
+    <div class="card" id="cmp-custom" style="border-color: var(--cyan);">
+        <h3>🔧 Custom</h3>
+        <div class="metric-value" id="cmp-eff-custom" style="font-size: 28px; color: var(--cyan);">—</div>
+        <div class="metric-label">Efficiency</div>
+        <div style="margin-top: 16px;">
+            <div class="flex-between" style="margin-bottom: 6px;">
+                <span style="font-size: 13px; color: var(--text-secondary);">Cd</span>
+                <span class="text-mono" style="color: var(--red);" id="cmp-cd-custom">—</span>
+            </div>
+            <div class="flex-between">
+                <span style="font-size: 13px; color: var(--text-secondary);">Downforce</span>
+                <span class="text-mono" style="color: var(--green);" id="cmp-df-custom">—</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bar Chart Comparison -->
+<div class="card gap-y">
+    <h3>Visual Comparison</h3>
+    <div class="chart-container" style="height: 350px;">
+        <canvas id="compareChart"></canvas>
+    </div>
+</div>
+
+<!-- Parameters Table -->
+<div class="card">
+    <h3>Parameter Comparison Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Baseline</th>
+                <th>RL-Optimized</th>
+                <th>Custom</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name in param_names %}
+            <tr>
+                <td style="font-family: Inter, sans-serif; color: var(--text-secondary);">{{ name.replace('_', ' ').title() }}</td>
+                <td>{{ "%.2f"|format(baseline_params[name]) }}</td>
+                <td style="color: var(--green);" id="tbl-rl-{{ name }}">{{ "%.2f"|format(rl_params[name]) }}</td>
+                <td style="color: var(--cyan);" id="tbl-custom-{{ name }}">{{ "%.2f"|format(baseline_params[name]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const paramNames = {{ param_names | tojson }};
+    const baselineParams = {{ baseline_params | tojson }};
+
+    let compareChart;
+
+    function initChart() {
+        compareChart = new Chart(document.getElementById('compareChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Efficiency', 'Drag (Cd)', 'Downforce (-Cl)', 'Pressure Recovery'],
+                datasets: [
+                    { label: 'Baseline', data: [], backgroundColor: '#f59e0b', borderRadius: 4 },
+                    { label: 'RL-Optimized', data: [], backgroundColor: '#10b981', borderRadius: 4 },
+                    { label: 'Custom', data: [], backgroundColor: '#06b6d4', borderRadius: 4 },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: '#1a2234' } },
+                }
+            }
+        });
+    }
+
+    function onCustomChange(name) {
+        const val = parseFloat(document.getElementById('cmp-' + name).value);
+        document.getElementById('cmp-val-' + name).textContent = val.toFixed(1);
+        document.getElementById('tbl-custom-' + name).textContent = val.toFixed(2);
+    }
+
+    async function runComparison() {
+        const customParams = {};
+        paramNames.forEach(name => {
+            customParams[name] = parseFloat(document.getElementById('cmp-' + name).value);
+        });
+
+        const res = await fetch('/api/compare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(customParams),
+        });
+        const data = await res.json();
+
+        // Update cards
+        ['baseline', 'rl', 'custom'].forEach(key => {
+            const d = data[key];
+            document.getElementById('cmp-eff-' + key).textContent = d.efficiency.toFixed(3);
+            document.getElementById('cmp-cd-' + key).textContent = d.cd.toFixed(4);
+            document.getElementById('cmp-df-' + key).textContent = d.downforce.toFixed(4);
+        });
+
+        // Update chart
+        compareChart.data.datasets[0].data = [data.baseline.efficiency, data.baseline.cd, data.baseline.downforce, data.baseline.pressure_recovery];
+        compareChart.data.datasets[1].data = [data.rl.efficiency, data.rl.cd, data.rl.downforce, data.rl.pressure_recovery];
+        compareChart.data.datasets[2].data = [data.custom.efficiency, data.custom.cd, data.custom.downforce, data.custom.pressure_recovery];
+        compareChart.update();
+
+        // Update RL params in table
+        if (data.rl_params) {
+            paramNames.forEach(name => {
+                if (data.rl_params[name] !== undefined) {
+                    document.getElementById('tbl-rl-' + name).textContent = data.rl_params[name].toFixed(2);
+                }
+            });
+        }
+    }
+
+    initChart();
+    runComparison();
+</script>
+{% endblock %}
