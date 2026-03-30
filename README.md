@@ -118,17 +118,17 @@ All hyperparameters are in `config/config.yaml`:
 ## Architecture
 
 ```
-┌──────────────┐     ┌───────────────────┐     ┌──────────────┐
-│  PPO Agent   │────▶│  F1 Aero Env      │────▶│  Surrogate   │
-│  (Actor +    │     │  (Gymnasium)      │     │  CFD Model   │
-│   Critic)    │◀────│  8-dim obs/action │◀────│  (Analytical)│
-└──────────────┘     └───────────────────┘     └──────────────┘
+┌──────────────┐     ┌───────────────────┐     ┌───────────────┐
+│  PPO Agent   │────▶│  F1 Aero Env      │────▶│  Surrogate    │
+│  (Actor +    │     │  (Gymnasium)      │     │  CFD Model    │
+│   Critic)    │◀────│  8-dim obs/action │◀────│  (Analytical) │
+└──────────────┘     └───────────────────┘     └───────────────┘
        │                                              │
        ▼                                              ▼
-┌──────────────┐                             ┌──────────────┐
-│  Checkpoints │                             │  Flask       │
-│  & Logs      │                             │  Dashboard   │
-└──────────────┘                             └──────────────┘
+┌──────────────┐                               ┌──────────────┐
+│  Checkpoints │                               │  Flask       │
+│  & Logs      │                               │  Dashboard   │
+└──────────────┘                               └──────────────┘
 ```
 
 
