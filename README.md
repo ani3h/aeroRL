@@ -93,7 +93,7 @@ python main.py evaluate --model-path results/models/best --episodes 20
 python main.py dashboard
 ```
 
-Open **http://localhost:5000** in your browser. The dashboard includes:
+Open **http://localhost:8080** in your browser. The dashboard includes:
 
 | Page | Description |
 |------|-------------|

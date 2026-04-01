@@ -174,7 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Host to bind to"
     )
     dash_parser.add_argument(
-        "--port", type=int, default=5000,
+        "--port", type=int, default=8080,
         help="Port to serve on"
     )
     dash_parser.add_argument(

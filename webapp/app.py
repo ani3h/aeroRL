@@ -284,7 +284,7 @@ def api_compare():
 # Main
 # ---------------------------------------------------------------------------
 
-def run_dashboard(host: str = "0.0.0.0", port: int = 5000, debug: bool = True):
+def run_dashboard(host: str = "0.0.0.0", port: int = 8080, debug: bool = True):
     """Launch the Flask dashboard."""
     print(f"\n{'='*60}")
     print(f"  AeroRL Wind Tunnel Dashboard")
